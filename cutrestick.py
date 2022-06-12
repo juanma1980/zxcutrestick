@@ -1,11 +1,33 @@
 #!/usr/bin/python3
 from PySide2.QtWidgets import QApplication ,QMainWindow,QPushButton,QVBoxLayout,QWidget,QLabel
 from PySide2 import QtGui
-from PySide2.QtCore import QSize,Slot,Qt, QPropertyAnimation,QThread,QRect,QTimer,Signal,QSignalMapper,QProcess,QEvent
+from PySide2.QtCore import QSize,Slot,Qt, QPropertyAnimation,QThread,QRect,QTimer,Signal,QSignalMapper,QProcess,QEvent,QThread
 import time
 import subprocess
 
-class virtupal(QWidget):
+class pressedKey(QThread):
+	def __init__(self,*args):
+		super().__init__()
+		self.keyx=""
+		self.keyy=""
+
+	def run(self,*args):
+		if self.keyx or self.keyy:
+			if self.keyx and self.keyy:
+				cmd=["xdotool","key","{}+{}".format(self.keyx,self.keyy)]
+			elif self.keyx:
+				cmd=["xdotool","key",self.keyx]
+			elif self.keyy:
+				cmd=["xdotool","key",self.keyy]
+			subprocess.run(cmd)
+		time.sleep(0.01)
+
+	def setKeys(self,x="",y=""):
+		self.keyx=x
+		self.keyy=y
+
+
+class cutrestick(QWidget):
 	def __init__(self,*args):
 		super().__init__()
 		self.setWindowFlags(Qt.FramelessWindowHint)
@@ -14,6 +36,7 @@ class virtupal(QWidget):
 		#self.setWindowModality(Qt.WindowModal)
 		self.setAttribute(Qt.WA_ShowWithoutActivating)
 		self.setFocusPolicy(Qt.NoFocus)
+		self.pressedKey=pressedKey()
 		self.pos=20
 		self.radius=200
 		self.setGeometry(self.pos, self.pos, self.radius+30, self.radius+30)
@@ -22,6 +45,8 @@ class virtupal(QWidget):
 		self.setMouseTracking(True) 
 		self.drawStick()
 		self.show()
+		self.move(200,200)
+		self.pressedKey.run()
 
 	def paintEvent(self,*args):
 		painter=QtGui.QPainter(self)
@@ -37,6 +62,9 @@ class virtupal(QWidget):
 		self.stick.setFocusPolicy(Qt.NoFocus)
 		lay.addWidget(self.stick)
 		self.setLayout(lay)
+
+	def mouseReleaseEvent(self, qtevent):
+		self.stick.move(self.radius/2,self.radius/2)
 
 	def mouseMoveEvent(self, qtevent):
 		posx=qtevent.x()
@@ -59,23 +87,13 @@ class virtupal(QWidget):
 		elif posy<self.radius/2:
 			keyy="q"
 			posy=0
-		elif posx>self.radius/2:
+		elif posy>self.radius/2:
 			keyy="a"
 			posy=self.radius
 		self.stick.move(posx,posy)
-		if keyx or keyy:
-			if keyx and keyy:
-				cmd=["xdotool","key","{}+{}".format(keyx,keyy)]
-			elif keyx:
-				cmd=["xdotool","key",keyx]
-			elif keyy:
-				cmd=["xdotool","key",keyy]
-			subprocess.run(cmd)
-		time.sleep(0.01)
+		self.pressedKey.setKeys(x=keyx,y=keyy)
 
- 
-
-app=QApplication(["Virtupal"])
-virtupalLauncher=virtupal()
+app=QApplication(["cutreStick"])
+cutreLauncher=cutrestick()
 app.exec_()
 
