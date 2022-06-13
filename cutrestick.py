@@ -5,30 +5,52 @@ from PySide2.QtCore import QSize,Slot,Qt, QPropertyAnimation,QThread,QRect,QTime
 import time
 import subprocess
 
+class pressedBtnFire(QThread):
+	def __init__(self,*args):
+		super().__init__()
+		self.key="m"
+	#def __init__
+
+	def run(self,*args):
+		cmd=["xdotool","keydown","space"]
+		subprocess.run(cmd)
+		cmd=["xdotool","keyup","space"]
+		subprocess.run(cmd)
+		return
+	#def run
+#class pressedBtnFire
+
 class pressedStick(QThread):
 	def __init__(self,*args):
 		super().__init__()
 		self.keyx=""
 		self.keyy=""
+		self.swMove=False
 	#def __init__
 
 	def run(self,*args):
-		while True:
-			if self.keyx or self.keyy:
-				if self.keyx and self.keyy:
-					cmd=["xdotool","key","{}+{}".format(self.keyx,self.keyy)]
-				elif self.keyx:
-					cmd=["xdotool","key",self.keyx]
-				elif self.keyy:
-					cmd=["xdotool","key",self.keyy]
-				subprocess.run(cmd)
-			QApplication.processEvents()
-			time.sleep(0.01)
+		if self.keyx or self.keyy:
+			if self.keyx and self.keyy:
+				cmd=["xdotool","keydown","{}+{}".format(self.keyx,self.keyy)]
+			elif self.keyx:
+				cmd=["xdotool","keydown",self.keyx]
+			elif self.keyy:
+				cmd=["xdotool","keydown",self.keyy]
+			subprocess.run(cmd)
+			#QApplication.processEvents()
 	#def run
 
 	def setKeys(self,x="",y=""):
+		if x!=self.keyx or y!=self.keyy:
+			if y!=self.keyy or y=="":
+				cmd=["xdotool","keyup",self.keyy]
+				subprocess.run(cmd)
+			if x!=self.keyx or x=="":
+				cmd=["xdotool","keyup",self.keyx]
+			subprocess.run(cmd)
 		self.keyx=x
 		self.keyy=y
+		print("Set keys {} {}".format(self.keyx,self.keyy))
 	#def setKeys
 #class pressedStick
 
@@ -38,60 +60,77 @@ class cutrebuttons(QWidget):
 		self.setWindowFlags(Qt.FramelessWindowHint)
 		self.setWindowFlags(Qt.WindowStaysOnTopHint)
 		self.setWindowFlags(Qt.X11BypassWindowManagerHint)
-		#self.setWindowModality(Qt.WindowModal)
 		self.setAttribute(Qt.WA_ShowWithoutActivating)
 		self.setFocusPolicy(Qt.NoFocus)
-		self.pressedStick=pressedStick()
-		self.pos=20
-		self.radius=100
-		self.setGeometry(self.pos, self.pos, self.radius+30, self.radius+30)
-		self.btnM=QPushButton("M")
+		self.setMouseTracking(True) 
+		self.pressedBtnFire=pressedBtnFire()
+		self.installEventFilter(self)
 		self.size=128
+		self.btnFire=QPushButton("M")
+		self.btnFire.setAttribute(Qt.WA_AcceptTouchEvents)
+		self.setAttribute(Qt.WA_AcceptTouchEvents)
 		self.drawButtons()
 		self.show()
-		self.move(600,600)
-		#self.pressedStick.start()
+		self._setPosition()
 	#def __init__
+
+	def _setPosition(self):
+		scr=app.primaryScreen()
+		w=scr.size().width()
+		h=scr.size().height()
+		self.move(0+(self.size*0.5),h-(self.size*1.5))
+	#def _setPosition(self):
+
+	def eventFilter(self,source,event):
+		if event.type()==QEvent.Type.TouchBegin:
+			self.pressedBtnFire.start()
+		return False
+	#def eventFilter
 
 	def drawButtons(self):
 		lay=QHBoxLayout()
-		self.btnM.setAutoRepeat(True)
-		self.btnM.setFixedSize(self.size,self.size)
-		self.btnM.setStyleSheet("border: 1px solid blue;border-radius: {}px;".format(self.size))
-		#self.stick.pressed.connect(self._move)
-		self.btnM.setFocusPolicy(Qt.NoFocus)
-		self.btnM.clicked.connect(self._sendM)
-		lay.addWidget(self.btnM)
+		self.btnFire.setAutoRepeat(True)
+		self.btnFire.setFixedSize(self.size,self.size)
+		self.btnFire.setStyleSheet("border: 1px solid blue;border-radius: {}px;".format(self.size))
+		self.btnFire.setFocusPolicy(Qt.NoFocus)
+		lay.addWidget(self.btnFire)
 		self.setLayout(lay)
 	#def drawButtons
-
-	def _sendM(self):
-		cmd=["xdotool","key","m"]
-		subprocess.run(cmd)
-	#def _sendM(self):
 #class cutrebuttons
 
 class cutrestick(QWidget):
 	def __init__(self,*args):
 		super().__init__()
+		self.setAttribute(Qt.WA_AcceptTouchEvents)
 		self.setWindowFlags(Qt.FramelessWindowHint)
 		self.setWindowFlags(Qt.WindowStaysOnTopHint)
 		self.setWindowFlags(Qt.X11BypassWindowManagerHint)
-		#self.setWindowModality(Qt.WindowModal)
 		self.setAttribute(Qt.WA_ShowWithoutActivating)
+		self.setCursor(Qt.BlankCursor)
+		self.installEventFilter(self)
 		self.setFocusPolicy(Qt.NoFocus)
 		self.pressedStick=pressedStick()
-		self.pos=20
-		self.radius=200
-		self.setGeometry(self.pos, self.pos, self.radius+30, self.radius+30)
+		self.border=20
+		self.pos=self.border/2
+		self.radius=150
+		self.setGeometry(self.pos, self.pos, self.radius+self.border, self.radius+self.border)
 		self.stick=QPushButton("*")
-		self.size=40
+		self.size=100
+		self.stick.setAttribute(Qt.WA_AcceptTouchEvents)
 		self.setMouseTracking(True) 
 		self.drawStick()
 		self.show()
-		self.move(200,200)
-		self.pressedStick.start()
+		self.swMoving=False
+		self.swTouch=False
+		self._setPosition()
 	#def __init__
+
+	def _setPosition(self):
+		scr=app.primaryScreen()
+		w=scr.size().width()
+		h=scr.size().height()
+		self.move(w-(self.radius+(self.size)),h-(self.radius+(self.size)))
+	#def _setPosition(self):
 
 	def paintEvent(self,*args):
 		painter=QtGui.QPainter(self)
@@ -102,45 +141,53 @@ class cutrestick(QWidget):
 	def drawStick(self):
 		lay=QVBoxLayout()
 		self.stick.setAutoRepeat(True)
-		self.stick.setFixedSize(self.size*2,self.size*2)
-		self.stick.setStyleSheet("border: 1px solid blue;border-radius: {}px;".format(self.size))
-		#self.stick.pressed.connect(self._move)
+		self.stick.setFixedSize(self.size,self.size)
+		self.stick.setStyleSheet("border: 1px solid blue;border-radius: {}px;".format(self.size*2))
 		self.stick.setFocusPolicy(Qt.NoFocus)
 		lay.addWidget(self.stick)
+		self.stick.move((self.radius/2)-self.size,(self.radius/2)-self.size)
 		self.setLayout(lay)
 	#def drawStick
 
-	def mouseReleaseEvent(self, qtevent):
-		self.pressedStick.setKeys(x="",y="")
-		self.stick.move(self.radius/2,self.radius/2)
-	#def mouseReleaseEvent
-
-	def mouseMoveEvent(self, qtevent):
-		posx=qtevent.x()
-		posy=qtevent.y()
+	def eventFilter(self,source,event):
+		if event.type()==QEvent.Type.TouchBegin:
+			self.swTouch=True
+		elif event.type()==QEvent.Type.MouseMove and self.swTouch:
+			self._moveStick(event.x(),event.y())
+		elif event.type()==QEvent.Type.MouseButtonRelease or event.type()==QEvent.Type.TouchEnd:
+			self.swTouch=False
+			self.stick.move((self.width()/2)-self.size/2,(self.height()/2)-self.size/2)
+			self.pressedStick.setKeys(x="",y="")
+		return False
+	
+	def _moveStick(self, posx,posy):
 		keyx=""
 		keyy=""
-		tolerance=20
-		if posx>(self.radius/2)-tolerance and posx<(self.radius/2)+tolerance:
-			posx=self.radius/2
+		centerX=((self.width()/2)-self.size/2)
+		centerY=((self.height()/2)-self.size/2)
+		toleranceR=self.size/2.25
+		toleranceL=self.size/2.25
+		if posx>centerX-toleranceL and posx<centerX+toleranceR:
+			posx=centerX
 			keyx=""
 		elif posx<self.radius/2:
 			keyx="o"
-			posx=0
+			posx=self.border
 		elif posx>self.radius/2:
 			keyx="p"
-			posx=self.radius
-		if posy>(self.radius/2)-tolerance and posy<(self.radius/2)+tolerance:
+			posx=centerX+self.border
+		if posy>centerY-toleranceL and posy<centerY+toleranceR:
 			keyy=""
-			posy=self.radius/2
+			posy=centerY
 		elif posy<self.radius/2:
 			keyy="q"
-			posy=0
+			posy=self.border
 		elif posy>self.radius/2:
 			keyy="a"
-			posy=self.radius
+			posy=centerY+self.border
 		self.stick.move(posx,posy)
 		self.pressedStick.setKeys(x=keyx,y=keyy)
+		self.pressedStick.start()
 	#def mouseMoveEvent
 #class cutrestick
 
