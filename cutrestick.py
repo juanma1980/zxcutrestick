@@ -1,3 +1,6 @@
+#Copyright juanma1980 2022
+#Gpl-3 License
+
 #!/usr/bin/python3
 from PySide2.QtWidgets import QApplication ,QMainWindow,QPushButton,QVBoxLayout,QWidget,QHBoxLayout
 from PySide2 import QtGui
