@@ -1,7 +1,7 @@
 #!/usr/bin/python3
-from PySide2.QtWidgets import QApplication ,QMainWindow,QPushButton,QVBoxLayout,QWidget,QLabel,QHBoxLayout
+from PySide2.QtWidgets import QApplication ,QMainWindow,QPushButton,QVBoxLayout,QWidget,QHBoxLayout
 from PySide2 import QtGui
-from PySide2.QtCore import QSize,Slot,Qt, QPropertyAnimation,QThread,QRect,QTimer,Signal,QSignalMapper,QProcess,QEvent,QThread
+from PySide2.QtCore import Qt,QThread,QRect,QEvent,QThread
 import time
 import subprocess
 
@@ -14,9 +14,11 @@ class pressedBtnFire(QThread):
 	def run(self,*args):
 		cmd=["xdotool","keydown","space"]
 		subprocess.run(cmd)
+		time.sleep(0.01)
 		cmd=["xdotool","keyup","space"]
 		subprocess.run(cmd)
-		return
+		time.sleep(0.01)
+		return True
 	#def run
 #class pressedBtnFire
 
@@ -25,8 +27,12 @@ class pressedStick(QThread):
 		super().__init__()
 		self.keyx=""
 		self.keyy=""
-		self.swMove=False
+		self.dbg=False
 	#def __init__
+
+	def _debug(self,msg):
+		if self.dbg==True:
+			print("stick: {}".format(msg))
 
 	def run(self,*args):
 		if self.keyx or self.keyy:
@@ -38,6 +44,7 @@ class pressedStick(QThread):
 				cmd=["xdotool","keydown",self.keyy]
 			subprocess.run(cmd)
 			#QApplication.processEvents()
+		return True
 	#def run
 
 	def setKeys(self,x="",y=""):
@@ -48,9 +55,10 @@ class pressedStick(QThread):
 			if x!=self.keyx or x=="":
 				cmd=["xdotool","keyup",self.keyx]
 			subprocess.run(cmd)
+			time.sleep(0.01)
 		self.keyx=x
 		self.keyy=y
-		print("Set keys {} {}".format(self.keyx,self.keyy))
+		self._debug("Set keys {} {}".format(self.keyx,self.keyy))
 	#def setKeys
 #class pressedStick
 
@@ -62,7 +70,6 @@ class cutrebuttons(QWidget):
 		self.setWindowFlags(Qt.X11BypassWindowManagerHint)
 		self.setAttribute(Qt.WA_ShowWithoutActivating)
 		self.setFocusPolicy(Qt.NoFocus)
-		self.setMouseTracking(True) 
 		self.pressedBtnFire=pressedBtnFire()
 		self.installEventFilter(self)
 		self.size=128
@@ -84,7 +91,7 @@ class cutrebuttons(QWidget):
 	def eventFilter(self,source,event):
 		if event.type()==QEvent.Type.TouchBegin:
 			self.pressedBtnFire.start()
-		return False
+		return True
 	#def eventFilter
 
 	def drawButtons(self):
@@ -109,6 +116,7 @@ class cutrestick(QWidget):
 		self.setCursor(Qt.BlankCursor)
 		self.installEventFilter(self)
 		self.setFocusPolicy(Qt.NoFocus)
+		self.grabMouse()
 		self.pressedStick=pressedStick()
 		self.border=20
 		self.pos=self.border/2
@@ -165,8 +173,8 @@ class cutrestick(QWidget):
 		keyy=""
 		centerX=((self.width()/2)-self.size/2)
 		centerY=((self.height()/2)-self.size/2)
-		toleranceR=self.size/2.25
-		toleranceL=self.size/2.25
+		toleranceR=self.size/2.5
+		toleranceL=self.size/2.5
 		if posx>centerX-toleranceL and posx<centerX+toleranceR:
 			posx=centerX
 			keyx=""
