@@ -4,20 +4,26 @@
 from PySide2.QtWidgets import QApplication ,QMainWindow,QPushButton,QVBoxLayout,QWidget,QHBoxLayout
 from PySide2 import QtGui
 from PySide2.QtCore import Qt,QThread,QRect,QEvent,QThread
-import time
+import os,time
 import subprocess
 
 class pressedBtnFire(QThread):
 	def __init__(self,*args):
 		super().__init__()
-		self.key="space"
+		self.fire1="space"
+		self.fire2=""
 	#def __init__
 
+	def setKeys(self,fire1="espace",fire2=""):
+		self.fire1=fire1
+		self.fire2=fire2
+	#def setKeys
+
 	def run(self,*args):
-		cmd=["xdotool","keydown",self.key]
+		cmd=["xdotool","keydown",self.fire1]
 		subprocess.run(cmd)
 		time.sleep(0.01)
-		cmd=["xdotool","keyup",self.key]
+		cmd=["xdotool","keyup",self.fire1]
 		subprocess.run(cmd)
 		time.sleep(0.01)
 		return True
@@ -74,14 +80,23 @@ class cutrebuttons(QWidget):
 		self.setFocusPolicy(Qt.NoFocus)
 		self.pressedBtnFire=pressedBtnFire()
 		self.installEventFilter(self)
+		self.config={'fire1':'space','fire2':''}
 		self.size=128
-		self.btnFire=QPushButton("M")
-		self.btnFire.setAttribute(Qt.WA_AcceptTouchEvents)
+		self.btnFire1=QPushButton(self.config['fire1'])
+		self.btnFire1.setAttribute(Qt.WA_AcceptTouchEvents)
 		self.setAttribute(Qt.WA_AcceptTouchEvents)
 		self.drawButtons()
 		self.show()
 		self._setPosition()
 	#def __init__
+
+	def setKeys(self,config):
+		for key,item in config.items():
+			if key in self.config.keys():
+				self.config[key]=item
+		self.btnFire1.setText(self.config['fire1'])
+		self.pressedBtnFire.setKeys(self.config['fire1'],self.config['fire2'])
+	#def setKeys
 
 	def _setPosition(self):
 		scr=app.primaryScreen()
@@ -98,11 +113,11 @@ class cutrebuttons(QWidget):
 
 	def drawButtons(self):
 		lay=QHBoxLayout()
-		self.btnFire.setAutoRepeat(True)
-		self.btnFire.setFixedSize(self.size,self.size)
-		self.btnFire.setStyleSheet("border: 1px solid blue;border-radius: {}px;".format(self.size))
-		self.btnFire.setFocusPolicy(Qt.NoFocus)
-		lay.addWidget(self.btnFire)
+		self.btnFire1.setAutoRepeat(True)
+		self.btnFire1.setFixedSize(self.size,self.size)
+		self.btnFire1.setStyleSheet("border: 1px solid blue;border-radius: {}px;".format(self.size))
+		self.btnFire1.setFocusPolicy(Qt.NoFocus)
+		lay.addWidget(self.btnFire1)
 		self.setLayout(lay)
 	#def drawButtons
 #class cutrebuttons
@@ -116,24 +131,31 @@ class cutrestick(QWidget):
 		self.setWindowFlags(Qt.X11BypassWindowManagerHint)
 		self.setAttribute(Qt.WA_ShowWithoutActivating)
 		self.setCursor(Qt.BlankCursor)
-		self.installEventFilter(self)
 		self.setFocusPolicy(Qt.NoFocus)
-		self.grabMouse()
+		self.installEventFilter(self)
 		self.pressedStick=pressedStick()
+		self.config={'left':'o','right':'p','up':'q','down':'a'}
 		self.border=20
 		self.pos=self.border/2
 		self.radius=150
 		self.setGeometry(self.pos, self.pos, self.radius+self.border, self.radius+self.border)
+		self.swMoving=False
+		self.swTouch=False
 		self.stick=QPushButton("*")
-		self.size=100
 		self.stick.setAttribute(Qt.WA_AcceptTouchEvents)
+		self.size=100
+		self.grabMouse()
 		self.setMouseTracking(True) 
 		self.drawStick()
 		self.show()
-		self.swMoving=False
-		self.swTouch=False
 		self._setPosition()
 	#def __init__
+
+	def setKeys(self,config):
+		for key,item in config.items():
+			if key in self.config.keys():
+				self.config[key]=item
+	#def setKeys
 
 	def _setPosition(self):
 		scr=app.primaryScreen()
@@ -182,19 +204,19 @@ class cutrestick(QWidget):
 			posx=centerX
 			keyx=""
 		elif posx<self.radius/2:
-			keyx="o"
+			keyx=self.config['left']
 			posx=self.border
 		elif posx>self.radius/2:
-			keyx="p"
+			keyx=self.config['right']
 			posx=centerX+self.border
 		if posy>centerY-toleranceL and posy<centerY+toleranceR:
 			keyy=""
 			posy=centerY
 		elif posy<self.radius/2:
-			keyy="q"
+			keyy=self.config['up']
 			posy=self.border
 		elif posy>self.radius/2:
-			keyy="a"
+			keyy=self.config['down']
 			posy=centerY+self.border
 		self.stick.move(posx,posy)
 		self.pressedStick.setKeys(x=keyx,y=keyy)
@@ -202,8 +224,35 @@ class cutrestick(QWidget):
 	#def moveStick
 #class cutrestick
 
+def _parseConfig():
+	config="./config.txt"
+	contents=[]
+	if os.path.isfile(config):
+		with open(config,"r") as f:
+			contents=f.readlines()
+	config={'left':'o','right':'p','up':'q','down':'a','fire1':'space','fire2':''}
+	for line in contents:
+		if line.startswith("left"):
+			config['left']=line.split("=")[-1].strip()
+		elif line.startswith("right"):
+			config['right']=line.split("=")[-1].strip()
+		elif line.startswith("down"):
+			config['down']=line.split("=")[-1].strip()
+		elif line.startswith("up"):
+			config['up']=line.split("=")[-1].strip()
+		elif line.startswith("fire1"):
+			config['fire1']=line.split("=")[-1].strip()
+		elif line.startswith("fire2"):
+			config['fire2']=line.split("=")[-1].strip()
+	return config
+#def parseConfig
+	
+
 app=QApplication(["cutreStick"])
 cutreStick=cutrestick()
 cutreButtons=cutrebuttons()
+config=_parseConfig()
+cutreStick.setKeys(config)
+cutreButtons.setKeys(config)
 app.exec_()
 

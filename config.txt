@@ -1,0 +1,7 @@
+#Key names for xdotool
+left=o
+right=p
+up=q
+down=a
+fire1=space
+fire2=m
