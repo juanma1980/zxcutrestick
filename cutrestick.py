@@ -3,7 +3,7 @@
 #Gpl-3 License
 from PySide2.QtWidgets import QApplication ,QMainWindow,QPushButton,QVBoxLayout,QWidget,QHBoxLayout
 from PySide2 import QtGui
-from PySide2.QtCore import Qt,QThread,QRect,QEvent,QThread
+from PySide2.QtCore import Qt,QThread,QRect,QEvent,QThread,QSize
 import os,time
 import subprocess
 
@@ -81,11 +81,14 @@ class cutrebuttons(QWidget):
 		self.pressedBtnFire=pressedBtnFire()
 		self.installEventFilter(self)
 		self.config={'fire1':'space','fire2':''}
-		self.size=128
+		self.size=150
 		self.btnFire1=QPushButton(self.config['fire1'])
+		self.btnFire1.setObjectName("fire")
 		self.btnFire1.setAttribute(Qt.WA_AcceptTouchEvents)
 		self.setAttribute(Qt.WA_AcceptTouchEvents)
 		self.drawButtons()
+		css="""QPushButton#fire {border: 5px solid silver;margin-top:%spx;margin-bottom:%spx;background-color:grey;color:white;border-radius: %spx;} QPushButton#fire:pressed {color:black}"""%(int(self.size/7),int(self.size/7),self.size*2)
+		self.setStyleSheet(css)
 		self.show()
 		self._setPosition()
 	#def __init__
@@ -102,7 +105,7 @@ class cutrebuttons(QWidget):
 		scr=app.primaryScreen()
 		w=scr.size().width()
 		h=scr.size().height()
-		self.move(0+(self.size*0.5),h-(self.size*1.5))
+		self.move(0+(self.size*0.5),h-(self.size+100))
 	#def _setPosition
 
 	def eventFilter(self,source,event):
@@ -111,11 +114,16 @@ class cutrebuttons(QWidget):
 		return True
 	#def eventFilter
 
+	def paintEvent(self,*args):
+		painter=QtGui.QPainter(self)
+		painter.setPen(QtGui.QPen(Qt.green,8,Qt.DashLine))
+		painter.drawRect(self.pos,self.pos,self.radius,self.radius)
+	#def paintEvent
+
 	def drawButtons(self):
 		lay=QHBoxLayout()
 		self.btnFire1.setAutoRepeat(True)
 		self.btnFire1.setFixedSize(self.size,self.size)
-		self.btnFire1.setStyleSheet("border: 1px solid blue;border-radius: {}px;".format(self.size))
 		self.btnFire1.setFocusPolicy(Qt.NoFocus)
 		lay.addWidget(self.btnFire1)
 		self.setLayout(lay)
@@ -125,6 +133,7 @@ class cutrebuttons(QWidget):
 class cutrestick(QWidget):
 	def __init__(self,*args):
 		super().__init__()
+		self.rsrc="images"
 		self.setAttribute(Qt.WA_AcceptTouchEvents)
 		self.setWindowFlags(Qt.FramelessWindowHint)
 		self.setWindowFlags(Qt.WindowStaysOnTopHint)
@@ -141,15 +150,40 @@ class cutrestick(QWidget):
 		self.setGeometry(self.pos, self.pos, self.radius+self.border, self.radius+self.border)
 		self.swMoving=False
 		self.swTouch=False
-		self.stick=QPushButton("*")
-		self.stick.setAttribute(Qt.WA_AcceptTouchEvents)
 		self.size=100
+		self.stick=QPushButton()
+		self._setImagesForButton()
+		self.stick.setAttribute(Qt.WA_AcceptTouchEvents)
 		self.grabMouse()
 		self.setMouseTracking(True) 
 		self.drawStick()
 		self.show()
 		self._setPosition()
 	#def __init__
+
+	def _setImagesForButton(self):
+		if os.path.isdir(self.rsrc):
+			for img in os.listdir(self.rsrc):
+				if img=="joyCenter.jpg":
+					self.icnCenter=QtGui.QIcon(os.path.join(self.rsrc,img))
+					self.stick.setIcon(self.icnCenter)
+					self.stick.setIconSize(QSize(self.size,self.size))
+				elif img=="joyUp.jpg":
+					self.icnUp=QtGui.QIcon(os.path.join(self.rsrc,img))
+				elif img=="joyDown.jpg":
+					self.icnDown=QtGui.QIcon(os.path.join(self.rsrc,img))
+				elif img=="joyLeft.jpg":
+					self.icnLeft=QtGui.QIcon(os.path.join(self.rsrc,img))
+				elif img=="joyRight.jpg":
+					self.icnRight=QtGui.QIcon(os.path.join(self.rsrc,img))
+				elif img=="joyUpLeft.jpg":
+					self.icnUpLeft=QtGui.QIcon(os.path.join(self.rsrc,img))
+				elif img=="joyDownLeft.jpg":
+					self.icnDownLeft=QtGui.QIcon(os.path.join(self.rsrc,img))
+				elif img=="joyDownRight.jpg":
+					self.icnDownRight=QtGui.QIcon(os.path.join(self.rsrc,img))
+				elif img=="joyUpRight.jpg":
+					self.icnUpRight=QtGui.QIcon(os.path.join(self.rsrc,img))
 
 	def setKeys(self,config):
 		for key,item in config.items():
@@ -162,6 +196,7 @@ class cutrestick(QWidget):
 		w=scr.size().width()
 		h=scr.size().height()
 		self.move(w-(self.radius+(self.size)),h-(self.radius+(self.size)))
+		self.stick.move((self.width()/2)-self.size/2,(self.height()/2)-self.size/2)
 	#def _setPosition
 
 	def paintEvent(self,*args):
@@ -188,7 +223,10 @@ class cutrestick(QWidget):
 			self._moveStick(event.x(),event.y())
 		elif event.type()==QEvent.Type.MouseButtonRelease or event.type()==QEvent.Type.TouchEnd:
 			self.swTouch=False
-			self.stick.move((self.width()/2)-self.size/2,(self.height()/2)-self.size/2)
+			#self.stick.move((self.width()/2)-self.size/2,(self.height()/2)-self.size/2)
+			icn=self.icnCenter
+			self.stick.setIcon(icn)
+			self.stick.setIconSize(QSize(self.size,self.size))
 			self.pressedStick.setKeys(x="",y="")
 		return False
 	#def eventFilter
@@ -200,25 +238,42 @@ class cutrestick(QWidget):
 		centerY=((self.height()/2)-self.size/2)
 		toleranceR=self.size/(int(self.config['tolerance'])/10)
 		toleranceL=self.size/(int(self.config['tolerance'])/10)
+		icn=self.icnCenter
 		if posx>centerX-toleranceL and posx<centerX+toleranceR:
 			posx=centerX
 			keyx=""
 		elif posx<self.radius/2:
 			keyx=self.config['left']
+			icn=self.icnLeft
 			posx=self.border
 		elif posx>self.radius/2:
 			keyx=self.config['right']
+			icn=self.icnRight
 			posx=centerX+self.border
 		if posy>centerY-toleranceL and posy<centerY+toleranceR:
 			keyy=""
 			posy=centerY
 		elif posy<self.radius/2:
 			keyy=self.config['up']
+			if keyx==self.config['right']:
+				icn=self.icnUpRight
+			elif keyx==self.config['left']:
+				icn=self.icnUpLeft
+			else:
+				icn=self.icnUp
 			posy=self.border
 		elif posy>self.radius/2:
 			keyy=self.config['down']
+			if keyx==self.config['right']:
+				icn=self.icnDownRight
+			elif keyx==self.config['left']:
+				icn=self.icnDownLeft
+			else:
+				icn=self.icnDown
 			posy=centerY+self.border
-		self.stick.move(posx,posy)
+		self.stick.setIcon(icn)
+		self.stick.setIconSize(QSize(self.size,self.size))
+		#self.stick.move(posx,posy)
 		self.pressedStick.setKeys(x=keyx,y=keyy)
 		self.pressedStick.start()
 	#def moveStick
