@@ -1,7 +1,6 @@
+#!/usr/bin/python3
 #Copyright juanma1980 2022
 #Gpl-3 License
-
-#!/usr/bin/python3
 from PySide2.QtWidgets import QApplication ,QMainWindow,QPushButton,QVBoxLayout,QWidget,QHBoxLayout
 from PySide2 import QtGui
 from PySide2.QtCore import Qt,QThread,QRect,QEvent,QThread
@@ -11,14 +10,14 @@ import subprocess
 class pressedBtnFire(QThread):
 	def __init__(self,*args):
 		super().__init__()
-		self.key="m"
+		self.key="space"
 	#def __init__
 
 	def run(self,*args):
-		cmd=["xdotool","keydown","space"]
+		cmd=["xdotool","keydown",self.key]
 		subprocess.run(cmd)
 		time.sleep(0.01)
-		cmd=["xdotool","keyup","space"]
+		cmd=["xdotool","keyup",self.key]
 		subprocess.run(cmd)
 		time.sleep(0.01)
 		return True
@@ -89,7 +88,7 @@ class cutrebuttons(QWidget):
 		w=scr.size().width()
 		h=scr.size().height()
 		self.move(0+(self.size*0.5),h-(self.size*1.5))
-	#def _setPosition(self):
+	#def _setPosition
 
 	def eventFilter(self,source,event):
 		if event.type()==QEvent.Type.TouchBegin:
@@ -141,7 +140,7 @@ class cutrestick(QWidget):
 		w=scr.size().width()
 		h=scr.size().height()
 		self.move(w-(self.radius+(self.size)),h-(self.radius+(self.size)))
-	#def _setPosition(self):
+	#def _setPosition
 
 	def paintEvent(self,*args):
 		painter=QtGui.QPainter(self)
@@ -170,6 +169,7 @@ class cutrestick(QWidget):
 			self.stick.move((self.width()/2)-self.size/2,(self.height()/2)-self.size/2)
 			self.pressedStick.setKeys(x="",y="")
 		return False
+	#def eventFilter
 	
 	def _moveStick(self, posx,posy):
 		keyx=""
@@ -199,7 +199,7 @@ class cutrestick(QWidget):
 		self.stick.move(posx,posy)
 		self.pressedStick.setKeys(x=keyx,y=keyy)
 		self.pressedStick.start()
-	#def mouseMoveEvent
+	#def moveStick
 #class cutrestick
 
 app=QApplication(["cutreStick"])
