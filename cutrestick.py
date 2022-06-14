@@ -134,7 +134,7 @@ class cutrestick(QWidget):
 		self.setFocusPolicy(Qt.NoFocus)
 		self.installEventFilter(self)
 		self.pressedStick=pressedStick()
-		self.config={'left':'o','right':'p','up':'q','down':'a'}
+		self.config={'left':'o','right':'p','up':'q','down':'a','tolerance':'25'}
 		self.border=20
 		self.pos=self.border/2
 		self.radius=150
@@ -198,8 +198,8 @@ class cutrestick(QWidget):
 		keyy=""
 		centerX=((self.width()/2)-self.size/2)
 		centerY=((self.height()/2)-self.size/2)
-		toleranceR=self.size/2.5
-		toleranceL=self.size/2.5
+		toleranceR=self.size/(int(self.config['tolerance'])/10)
+		toleranceL=self.size/(int(self.config['tolerance'])/10)
 		if posx>centerX-toleranceL and posx<centerX+toleranceR:
 			posx=centerX
 			keyx=""
@@ -230,7 +230,7 @@ def _parseConfig():
 	if os.path.isfile(config):
 		with open(config,"r") as f:
 			contents=f.readlines()
-	config={'left':'o','right':'p','up':'q','down':'a','fire1':'space','fire2':''}
+	config={'left':'o','right':'p','up':'q','down':'a','fire1':'space','fire2':'','tolerance':'25'}
 	for line in contents:
 		if line.startswith("left"):
 			config['left']=line.split("=")[-1].strip()
@@ -244,6 +244,8 @@ def _parseConfig():
 			config['fire1']=line.split("=")[-1].strip()
 		elif line.startswith("fire2"):
 			config['fire2']=line.split("=")[-1].strip()
+		elif line.startswith("tolerance"):
+			config['tolerance']=line.split("=")[-1].strip()
 	return config
 #def parseConfig
 	

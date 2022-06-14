@@ -5,3 +5,4 @@ up=q
 down=a
 fire1=space
 fire2=m
+tolerance=27
