@@ -1,31 +1,29 @@
 #!/usr/bin/python3
 #Copyright juanma1980 2022
 #Gpl-3 License
-from PySide2.QtWidgets import QApplication ,QMainWindow,QPushButton,QVBoxLayout,QWidget,QHBoxLayout
+from PySide2.QtWidgets import QApplication ,QMainWindow,QPushButton,QVBoxLayout,QWidget,QGridLayout
 from PySide2 import QtGui
 from PySide2.QtCore import Qt,QThread,QRect,QEvent,QThread,QSize
 import os,time
 import subprocess
 
-class pressedBtnFire(QThread):
+class pressedBtn(QThread):
 	def __init__(self,*args):
 		super().__init__()
-		self.fire1="space"
-		self.fire2=""
+		self.key="space"
 	#def __init__
 
-	def setKeys(self,fire1="espace",fire2=""):
-		self.fire1=fire1
-		self.fire2=fire2
-	#def setKeys
+	def setKey(self,key="space"):
+		self.key=key
+	#def setKey
 
 	def run(self,*args):
-		cmd=["xdotool","keydown",self.fire1]
+		cmd=["xdotool","keydown",self.key]
 		subprocess.run(cmd)
-		time.sleep(0.01)
-		cmd=["xdotool","keyup",self.fire1]
+		time.sleep(0.1)
+		cmd=["xdotool","keyup",self.key]
 		subprocess.run(cmd)
-		time.sleep(0.01)
+		time.sleep(0.1)
 		return True
 	#def run
 #class pressedBtnFire
@@ -38,10 +36,6 @@ class pressedStick(QThread):
 		self.dbg=False
 	#def __init__
 
-	def _debug(self,msg):
-		if self.dbg==True:
-			print("stick: {}".format(msg))
-
 	def run(self,*args):
 		if self.keyx or self.keyy:
 			if self.keyx and self.keyy:
@@ -51,7 +45,6 @@ class pressedStick(QThread):
 			elif self.keyy:
 				cmd=["xdotool","keydown",self.keyy]
 			subprocess.run(cmd)
-			#QApplication.processEvents()
 		return True
 	#def run
 
@@ -66,9 +59,34 @@ class pressedStick(QThread):
 			time.sleep(0.01)
 		self.keyx=x
 		self.keyy=y
-		self._debug("Set keys {} {}".format(self.keyx,self.keyy))
 	#def setKeys
 #class pressedStick
+
+class zxButton(QPushButton):
+	def __init__(self,text="space",parent=None):
+		super (zxButton,self).__init__("",parent)
+		self.setText(text)
+		self.installEventFilter(self)
+		self.setAttribute(Qt.WA_AcceptTouchEvents)
+		self.setAutoRepeat(True)
+		self.pressedBtnFire=pressedBtn()
+		self.pressedBtnFire.setKey(self.text())
+		self.size=100
+		self.css="border:3px outset silver;margin:3px;background-color:grey;color:white"
+		self.pressedCss="border:3px inset silver;margin:3px;background-color:grey;color:red"
+		self.setStyleSheet(self.css)
+	#def __init__
+
+	def eventFilter(self,source,event):
+		if event.type()==QEvent.Type.TouchBegin:
+			self.setStyleSheet(self.pressedCss)
+			self.pressedBtnFire.start()
+			return True
+		elif event.type()==QEvent.Type.TouchEnd:
+			self.setStyleSheet(self.css)
+			return True
+		return False
+	#def eventFilter
 
 class cutrebuttons(QWidget):
 	def __init__(self,*args):
@@ -77,56 +95,54 @@ class cutrebuttons(QWidget):
 		self.setWindowFlags(Qt.WindowStaysOnTopHint)
 		self.setWindowFlags(Qt.X11BypassWindowManagerHint)
 		self.setAttribute(Qt.WA_ShowWithoutActivating)
-		self.setFocusPolicy(Qt.NoFocus)
-		self.pressedBtnFire=pressedBtnFire()
-		self.installEventFilter(self)
-		self.config={'fire1':'space','fire2':''}
+		self.config={'fire':'space'}
 		self.size=150
-		self.btnFire1=QPushButton(self.config['fire1'])
-		self.btnFire1.setObjectName("fire")
-		self.btnFire1.setAttribute(Qt.WA_AcceptTouchEvents)
-		self.setAttribute(Qt.WA_AcceptTouchEvents)
-		self.drawButtons()
-		css="""QPushButton#fire {border: 5px solid silver;margin-top:%spx;margin-bottom:%spx;background-color:grey;color:white;border-radius: %spx;} QPushButton#fire:pressed {color:black}"""%(int(self.size/7),int(self.size/7),self.size*2)
-		self.setStyleSheet(css)
 		self.show()
-		self._setPosition()
 	#def __init__
 
 	def setKeys(self,config):
 		for key,item in config.items():
-			if key in self.config.keys():
+			if (key in self.config.keys() or key.startswith("key")) and item!='':
 				self.config[key]=item
-		self.btnFire1.setText(self.config['fire1'])
-		self.pressedBtnFire.setKeys(self.config['fire1'],self.config['fire2'])
+		self.drawButtons()
 	#def setKeys
 
 	def _setPosition(self):
 		scr=app.primaryScreen()
 		w=scr.size().width()
 		h=scr.size().height()
-		self.move(0+(self.size*0.5),h-(self.size+100))
+		self.move(0+self.height()-100,h-(self.height()+100))
 	#def _setPosition
 
-	def eventFilter(self,source,event):
-		if event.type()==QEvent.Type.TouchBegin:
-			self.pressedBtnFire.start()
-		return True
-	#def eventFilter
-
-	def paintEvent(self,*args):
-		painter=QtGui.QPainter(self)
-		painter.setPen(QtGui.QPen(Qt.green,8,Qt.DashLine))
-		painter.drawRect(self.pos,self.pos,self.radius,self.radius)
-	#def paintEvent
-
 	def drawButtons(self):
-		lay=QHBoxLayout()
-		self.btnFire1.setAutoRepeat(True)
-		self.btnFire1.setFixedSize(self.size,self.size)
-		self.btnFire1.setFocusPolicy(Qt.NoFocus)
-		lay.addWidget(self.btnFire1)
+		lay=QGridLayout()
+		cont=0
+		btnFire=zxButton()
+		width=0
+		for key,item in self.config.items():
+			if item=="":
+				continue
+			btn=zxButton(item)
+			btn.setAttribute(Qt.WA_AcceptTouchEvents)
+			btn.clicked.connect(self.eventFilter)
+			btn.setFocusPolicy(Qt.NoFocus)
+			btn.setAutoRepeat(True)
+			if key=="fire":
+				btnFire=btn
+			else:
+				horizontalSize=self.size/(0.5*len(self.config))+6
+				if horizontalSize<btn.minimumSizeHint().width():
+					horizontalSize=btn.minimumSizeHint().width()+6
+				width+=horizontalSize
+				btn.setFixedSize(horizontalSize,btn.sizeHint().height()+15)
+				lay.addWidget(btn,0,cont,1,1)
+				cont+=1
+		btnFire.setFixedHeight(btn.sizeHint().height()+(self.size/3))
+		width+=btnFire.sizeHint().width()
+		lay.addWidget(btnFire,1,0,1,cont+1)
 		self.setLayout(lay)
+		self.setFixedSize(width,self.size)
+		self._setPosition()
 	#def drawButtons
 #class cutrebuttons
 
@@ -148,12 +164,11 @@ class cutrestick(QWidget):
 		self.pos=self.border/2
 		self.radius=150
 		self.setGeometry(self.pos, self.pos, self.radius+self.border, self.radius+self.border)
-		self.swMoving=False
 		self.swTouch=False
 		self.size=100
 		self.stick=QPushButton()
-		self._setImagesForButton()
 		self.stick.setAttribute(Qt.WA_AcceptTouchEvents)
+		self._setImagesForButton()
 		self.grabMouse()
 		self.setMouseTracking(True) 
 		self.drawStick()
@@ -184,6 +199,7 @@ class cutrestick(QWidget):
 					self.icnDownRight=QtGui.QIcon(os.path.join(self.rsrc,img))
 				elif img=="joyUpRight.jpg":
 					self.icnUpRight=QtGui.QIcon(os.path.join(self.rsrc,img))
+	#def _setImagesForButton
 
 	def setKeys(self,config):
 		for key,item in config.items():
@@ -223,7 +239,6 @@ class cutrestick(QWidget):
 			self._moveStick(event.x(),event.y())
 		elif event.type()==QEvent.Type.MouseButtonRelease or event.type()==QEvent.Type.TouchEnd:
 			self.swTouch=False
-			#self.stick.move((self.width()/2)-self.size/2,(self.height()/2)-self.size/2)
 			icn=self.icnCenter
 			self.stick.setIcon(icn)
 			self.stick.setIconSize(QSize(self.size,self.size))
@@ -240,19 +255,16 @@ class cutrestick(QWidget):
 		toleranceL=self.size/(int(self.config['tolerance'])/10)
 		icn=self.icnCenter
 		if posx>centerX-toleranceL and posx<centerX+toleranceR:
-			posx=centerX
 			keyx=""
 		elif posx<self.radius/2:
 			keyx=self.config['left']
 			icn=self.icnLeft
-			posx=self.border
 		elif posx>self.radius/2:
 			keyx=self.config['right']
 			icn=self.icnRight
 			posx=centerX+self.border
 		if posy>centerY-toleranceL and posy<centerY+toleranceR:
 			keyy=""
-			posy=centerY
 		elif posy<self.radius/2:
 			keyy=self.config['up']
 			if keyx==self.config['right']:
@@ -261,7 +273,6 @@ class cutrestick(QWidget):
 				icn=self.icnUpLeft
 			else:
 				icn=self.icnUp
-			posy=self.border
 		elif posy>self.radius/2:
 			keyy=self.config['down']
 			if keyx==self.config['right']:
@@ -270,13 +281,12 @@ class cutrestick(QWidget):
 				icn=self.icnDownLeft
 			else:
 				icn=self.icnDown
-			posy=centerY+self.border
 		self.stick.setIcon(icn)
 		self.stick.setIconSize(QSize(self.size,self.size))
-		#self.stick.move(posx,posy)
 		self.pressedStick.setKeys(x=keyx,y=keyy)
 		self.pressedStick.start()
 	#def moveStick
+
 #class cutrestick
 
 def _parseConfig():
@@ -295,20 +305,20 @@ def _parseConfig():
 			config['down']=line.split("=")[-1].strip()
 		elif line.startswith("up"):
 			config['up']=line.split("=")[-1].strip()
-		elif line.startswith("fire1"):
-			config['fire1']=line.split("=")[-1].strip()
-		elif line.startswith("fire2"):
-			config['fire2']=line.split("=")[-1].strip()
+		elif line.startswith("fire"):
+			config['fire']=line.split("=")[-1].strip()
+		elif line.startswith("key"):
+			config[line.split("=")[0].strip()]=line.split("=")[-1].strip()
 		elif line.startswith("tolerance"):
 			config['tolerance']=line.split("=")[-1].strip()
 	return config
 #def parseConfig
 	
-
+#### MAIN APP ####
 app=QApplication(["cutreStick"])
+config=_parseConfig()
 cutreStick=cutrestick()
 cutreButtons=cutrebuttons()
-config=_parseConfig()
 cutreStick.setKeys(config)
 cutreButtons.setKeys(config)
 app.exec_()
