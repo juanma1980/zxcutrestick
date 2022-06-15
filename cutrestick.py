@@ -55,7 +55,7 @@ class pressedStick(QThread):
 				subprocess.run(cmd)
 			if x!=self.keyx or x=="":
 				cmd=["xdotool","keyup",self.keyx]
-			subprocess.run(cmd)
+				subprocess.run(cmd)
 			time.sleep(0.01)
 		self.keyx=x
 		self.keyy=y
