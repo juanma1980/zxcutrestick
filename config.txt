@@ -4,6 +4,7 @@ right=p
 up=q
 down=a
 fire=space
+#Define as many keys as needed.
 key1=m
 key2=0
 key3=1
@@ -11,5 +12,6 @@ key4=2
 key5=3
 key6=4
 key7=5
-key7=Return
+key8=Return
+#Sensibility: 0=Min 100=Max. Values between 20 and 30 are more comfortable
 tolerance=25
