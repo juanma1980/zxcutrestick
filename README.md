@@ -6,7 +6,7 @@ It emulates a joystick for the thumb and maps directions to configured keys.
 All options are loaded from config file.   
 There's no install, simply clone this repo and run from terminal.   
 
-It depends on pyside2 and needs xdotool installed. Remenber: this is a "shabbystick".   
+It depends on pyside2 and needs xdotool installed. Remember: this is a "shabbystick".   
 #########   
    
 Teclado Virtual Cutre para jugar a emuladores de Zx Spectrum en pantallas táctiles.   
