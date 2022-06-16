@@ -16,7 +16,6 @@ on a non-touchscreen device then you must kill the process for exit.
 
 
 #########   
-   
 Teclado Virtual Cutre para jugar a emuladores de Zx Spectrum en pantallas táctiles.   
 Emula un joystick para el dedo pulgar y mapea las direcciones a las teclas configuradas.   
    
