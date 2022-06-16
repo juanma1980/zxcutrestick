@@ -4,7 +4,7 @@
 from PySide2.QtWidgets import QApplication ,QMainWindow,QPushButton,QVBoxLayout,QWidget,QGridLayout
 from PySide2 import QtGui
 from PySide2.QtCore import Qt,QThread,QRect,QEvent,QThread,QSize
-import os,time,sys
+import os,time
 import subprocess
 
 class pressedBtn(QThread):
@@ -37,7 +37,6 @@ class pressedBtn(QThread):
 
 	def _cutreQuit(self,*args):
 		QApplication.quit()
-		sys.exit(0)
 	#def _cutreQuit(self,*args):
 #class pressedBtnFire
 
@@ -120,6 +119,7 @@ class cutrebuttons(QWidget):
 		self.setWindowFlags(Qt.WindowStaysOnTopHint)
 		self.setWindowFlags(Qt.X11BypassWindowManagerHint)
 		self.setAttribute(Qt.WA_ShowWithoutActivating)
+		self.setCursor(Qt.BlankCursor)
 		self.show()
 	#def __init__
 
@@ -171,7 +171,6 @@ class cutrebuttons(QWidget):
 		self.setFixedSize(width,self.config['sizeKbd'])
 		self._setPosition()
 	#def drawButtons
-
 #class cutrebuttons
 
 class cutrestick(QWidget):
@@ -309,12 +308,12 @@ class cutrestick(QWidget):
 #class cutrestick
 
 def _parseConfig():
-	config="./config.txt"
+	configF="./config.txt"
+	config={'left':'o','right':'p','up':'q','down':'a','fire1':'space','key1':'m','key2':'Return','tolerance':'15','marginX':'100','marginY':'100','sizeJoy':'200','sizeKbd':'200'}
 	contents=[]
-	if os.path.isfile(config):
-		with open(config,"r") as f:
+	if os.path.isfile(configF):
+		with open(configF,"r") as f:
 			contents=f.readlines()
-	config={'left':'o','right':'p','up':'q','down':'a','fire1':'space','fire2':'','tolerance':'25'}
 	for line in contents:
 		if line.startswith("left"):
 			config['left']=line.split("=")[-1].strip()
@@ -348,7 +347,4 @@ app=QApplication(["cutreStick"])
 config=_parseConfig()
 cutreStick=cutrestick(config)
 cutreButtons=cutrebuttons(config)
-#cutreStick.setKeys(config)
-#cutreButtons.setKeys(config)
 app.exec_()
-
