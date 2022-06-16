@@ -13,14 +13,15 @@ key5=3
 key6=4
 key7=5
 key8=Return
-#Tolerance: 0=Max 100=Min. Values between 20 and 70 are more comfortable
-tolerance=25
-#Keyboard latency (miliseconds). Some games may suffer if there's no latency. 100 it's a average good value
-#Adjust this if you experience problems
+#Tolerance: The amount of thumb movement for setting a direction. 
+#0=Max 100=Min. Values between 10 and 50 are more comfortable.
+tolerance=15
+#Keyboard latency (miliseconds). Emulators may suffer if there's no latency. 
+#200 it's an average good value, adjust to your own needs
 latency=200
 #MarginX and marginY from bottom
 marginx=100
 marginy=100
-#Size of the controls
+#Size of the controls. Keyboard will set it's width for display all keys
 sizeJoy=300
 sizeKbd=200
