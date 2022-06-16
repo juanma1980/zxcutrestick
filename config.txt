@@ -13,5 +13,13 @@ key5=3
 key6=4
 key7=5
 key8=Return
-#Sensibility: 0=Min 100=Max. Values between 20 and 30 are more comfortable
+#Tolerance: 0=Max 100=Min. Values between 20 and 70 are more comfortable
 tolerance=25
+#Keyboard latency (miliseconds). Some games may suffer if there's no latency. 100 it's a average good value
+#Adjust this if you experience problems
+latency=200
+#MarginX and marginY from bottom
+marginx=100
+marginy=100
+#Size of the controls
+size=300
