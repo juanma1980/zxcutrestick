@@ -180,7 +180,8 @@ class cutrestick(QWidget):
 		self.pressedStick=pressedStick()
 		if len(args)>0:
 			self.setKeys(args[0])
-		self.rsrc="images"
+		confDir=os.path.dirname(__file__)
+		self.rsrc=os.path.join(confDir,"images")
 		self.setAttribute(Qt.WA_AcceptTouchEvents)
 		self.setWindowFlags(Qt.FramelessWindowHint)
 		self.setWindowFlags(Qt.WindowStaysOnTopHint)
@@ -308,7 +309,8 @@ class cutrestick(QWidget):
 #class cutrestick
 
 def _parseConfig():
-	configF="./config.txt"
+	confDir=os.path.dirname(__file__)
+	configF=os.path.join(confDir,"./config.txt")
 	config={'left':'o','right':'p','up':'q','down':'a','fire1':'space','key1':'m','key2':'Return','tolerance':'15','marginX':'100','marginY':'100','sizeJoy':'200','sizeKbd':'200'}
 	contents=[]
 	if os.path.isfile(configF):
