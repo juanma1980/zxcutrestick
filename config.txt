@@ -22,4 +22,5 @@ latency=200
 marginx=100
 marginy=100
 #Size of the controls
-size=300
+sizeJoy=300
+sizeKbd=200

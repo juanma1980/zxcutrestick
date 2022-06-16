@@ -4,7 +4,7 @@
 from PySide2.QtWidgets import QApplication ,QMainWindow,QPushButton,QVBoxLayout,QWidget,QGridLayout
 from PySide2 import QtGui
 from PySide2.QtCore import Qt,QThread,QRect,QEvent,QThread,QSize
-import os,time
+import os,time,sys
 import subprocess
 
 class pressedBtn(QThread):
@@ -19,18 +19,26 @@ class pressedBtn(QThread):
 	#def setKey
 
 	def run(self,*args):
-		cmd=["xdotool","keydown",self.key]
-		subprocess.run(cmd)
-		time.sleep(self.latency)
-		cmd=["xdotool","keyup",self.key]
-		subprocess.run(cmd)
-		time.sleep(self.latency)
+		if self.key=="X":
+			self._cutreQuit()
+		else:
+			cmd=["xdotool","keydown",self.key]
+			subprocess.run(cmd)
+			time.sleep(self.latency)
+			cmd=["xdotool","keyup",self.key]
+			subprocess.run(cmd)
+			time.sleep(self.latency)
 		return True
 	#def run
 
 	def setLatency(self,latency):
 		self.latency=latency
 	#def setLatency
+
+	def _cutreQuit(self,*args):
+		QApplication.quit()
+		sys.exit(0)
+	#def _cutreQuit(self,*args):
 #class pressedBtnFire
 
 class pressedStick(QThread):
@@ -105,12 +113,13 @@ class zxButton(QPushButton):
 class cutrebuttons(QWidget):
 	def __init__(self,*args):
 		super().__init__()
+		self.config={'fire':'space','latency':'0.1','sizeKbd':100,'marginx':100,'marginy':100}
+		if len(args)>0:
+			self.setKeys(args[0])
 		self.setWindowFlags(Qt.FramelessWindowHint)
 		self.setWindowFlags(Qt.WindowStaysOnTopHint)
 		self.setWindowFlags(Qt.X11BypassWindowManagerHint)
 		self.setAttribute(Qt.WA_ShowWithoutActivating)
-		self.config={'fire':'space','latency':'0.1'}
-		self.size=150
 		self.show()
 	#def __init__
 
@@ -125,13 +134,13 @@ class cutrebuttons(QWidget):
 		scr=app.primaryScreen()
 		w=scr.size().width()
 		h=scr.size().height()
-		self.move(0+self.height()-100,h-(self.height()+100))
+		self.move(0+self.config['marginx'],h-self.config['marginy']-self.height())
 	#def _setPosition
 
 	def drawButtons(self):
 		lay=QGridLayout()
-		cont=0
 		btnFire=zxButton()
+		cont=1
 		width=0
 		for key,item in self.config.items():
 			if item=="" or key.startswith("key")==False:
@@ -145,26 +154,30 @@ class cutrebuttons(QWidget):
 			if key=="fire":
 				btnFire=btn
 			else:
-				horizontalSize=self.size/(0.5*len(self.config))+6
+				horizontalSize=self.config['sizeKbd']/(0.5*len(self.config))+6
 				if horizontalSize<btn.minimumSizeHint().width():
 					horizontalSize=btn.minimumSizeHint().width()+6
 				width+=horizontalSize
 				btn.setFixedSize(horizontalSize,btn.sizeHint().height()+15)
-				lay.addWidget(btn,0,cont,1,1)
+				lay.addWidget(btn,1,cont,1,1)
 				cont+=1
-		btnFire.setFixedHeight(btn.sizeHint().height()+(self.size/3))
+		btnFire.setFixedHeight(btn.sizeHint().height()+(self.config['sizeKbd']/3))
 		width+=btnFire.sizeHint().width()
-		lay.addWidget(btnFire,1,0,1,cont+1)
+		lay.addWidget(btnFire,2,0,1,cont+1)
+		btnClose=zxButton("X")
+		btnClose.setFixedSize(QSize(24,24))
+		lay.addWidget(btnClose,0,0,1,cont+1,Qt.AlignRight)
 		self.setLayout(lay)
-		self.setFixedSize(width,self.size)
+		self.setFixedSize(width,self.config['sizeKbd'])
 		self._setPosition()
 	#def drawButtons
+
 #class cutrebuttons
 
 class cutrestick(QWidget):
 	def __init__(self,*args):
 		super().__init__()
-		self.config={'left':'o','right':'p','up':'q','down':'a','tolerance':'25','latency':'0.1','marginx':100,'marginy':100,'size':100}
+		self.config={'left':'o','right':'p','up':'q','down':'a','tolerance':'25','latency':'0.1','marginx':100,'marginy':100,'sizeJoy':100}
 		self.pressedStick=pressedStick()
 		if len(args)>0:
 			self.setKeys(args[0])
@@ -174,13 +187,9 @@ class cutrestick(QWidget):
 		self.setWindowFlags(Qt.WindowStaysOnTopHint)
 		self.setWindowFlags(Qt.X11BypassWindowManagerHint)
 		self.setAttribute(Qt.WA_ShowWithoutActivating)
-		self.setCursor(Qt.BlankCursor)
 		self.setFocusPolicy(Qt.NoFocus)
+		self.setCursor(Qt.BlankCursor)
 		self.installEventFilter(self)
-		self.border=20
-		self.pos=self.border/2
-		self.radius=150
-		self.setGeometry(self.pos, self.pos, self.radius+self.border, self.radius+self.border)
 		self.swTouch=False
 		self.stick=QPushButton()
 		self.stick.setAttribute(Qt.WA_AcceptTouchEvents)
@@ -198,7 +207,7 @@ class cutrestick(QWidget):
 				if img=="joyCenter.jpg":
 					self.icnCenter=QtGui.QIcon(os.path.join(self.rsrc,img))
 					self.stick.setIcon(self.icnCenter)
-					self.stick.setIconSize(QSize(self.config['size'],self.config['size']))
+					self.stick.setIconSize(QSize(self.config['sizeJoy'],self.config['sizeJoy']))
 				elif img=="joyUp.jpg":
 					self.icnUp=QtGui.QIcon(os.path.join(self.rsrc,img))
 				elif img=="joyDown.jpg":
@@ -228,24 +237,18 @@ class cutrestick(QWidget):
 		scr=app.primaryScreen()
 		w=scr.size().width()
 		h=scr.size().height()
-		self.move(w-(self.radius+(self.config['size'])),h-(self.radius+(self.config['size'])))
-		self.stick.move((self.width()/2)-self.config['size']/2,(self.height()/2)-self.config['size']/2)
+		self.move(w-(self.config['marginx']+self.width()),h-(self.config['marginy']+self.height()))
+		self.stick.move((self.width()/2)-self.config['sizeJoy']/2,(self.height()/2)-self.config['sizeJoy']/2)
 	#def _setPosition
-
-	def paintEvent(self,*args):
-		painter=QtGui.QPainter(self)
-		painter.setPen(QtGui.QPen(Qt.green,8,Qt.DashLine))
-		painter.drawRect(self.pos,self.pos,self.radius,self.radius)
-	#def paintEvent
 
 	def drawStick(self):
 		lay=QVBoxLayout()
 		self.stick.setAutoRepeat(True)
-		self.stick.setFixedSize(self.config['size'],self.config['size'])
-		self.stick.setStyleSheet("border: 1px solid blue;border-radius: {}px;".format(self.config['size']*2))
+		self.stick.setFixedSize(self.config['sizeJoy'],self.config['sizeJoy'])
+		self.stick.setStyleSheet("border: 1px solid blue;border-radius: {}px;".format(self.config['sizeJoy']*2))
 		self.stick.setFocusPolicy(Qt.NoFocus)
 		lay.addWidget(self.stick)
-		self.stick.move((self.radius/2)-self.config['size'],(self.radius/2)-self.config['size'])
+		self.stick.move((self.width()/2)-self.config['sizeJoy'],(self.width()/2)-self.config['sizeJoy'])
 		self.setLayout(lay)
 	#def drawStick
 
@@ -258,7 +261,7 @@ class cutrestick(QWidget):
 			self.swTouch=False
 			icn=self.icnCenter
 			self.stick.setIcon(icn)
-			self.stick.setIconSize(QSize(self.config['size'],self.config['size']))
+			self.stick.setIconSize(QSize(self.config['sizeJoy'],self.config['sizeJoy']))
 			self.pressedStick.setKeys(x="",y="")
 		return False
 	#def eventFilter
@@ -268,8 +271,8 @@ class cutrestick(QWidget):
 		keyy=""
 		centerX=self.width()/2
 		centerY=self.height()/2
-		toleranceR=(self.config['size']*int(self.config['tolerance']))/100
-		toleranceL=(self.config['size']*int(self.config['tolerance']))/100
+		toleranceR=(self.config['sizeJoy']*int(self.config['tolerance']))/100
+		toleranceL=(self.config['sizeJoy']*int(self.config['tolerance']))/100
 		icn=self.icnCenter
 		if posx>centerX-toleranceL and posx<centerX+toleranceR:
 			keyx=""
@@ -279,7 +282,6 @@ class cutrestick(QWidget):
 		elif posx>centerY:
 			keyx=self.config['right']
 			icn=self.icnRight
-			posx=centerX+self.border
 		if posy>centerY-toleranceL and posy<centerY+toleranceR:
 			keyy=""
 		elif posy<centerY:
@@ -299,7 +301,7 @@ class cutrestick(QWidget):
 			else:
 				icn=self.icnDown
 		self.stick.setIcon(icn)
-		self.stick.setIconSize(QSize(self.config['size'],self.config['size']))
+		self.stick.setIconSize(QSize(self.config['sizeJoy'],self.config['sizeJoy']))
 		self.pressedStick.setKeys(x=keyx,y=keyy)
 		self.pressedStick.start()
 	#def moveStick
@@ -334,8 +336,10 @@ def _parseConfig():
 			config['marginx']=int(line.split("=")[-1].strip())
 		elif line.startswith("marginy"):
 			config['marginy']=int(line.split("=")[-1].strip())
-		elif line.startswith("size"):
-			config['size']=int(line.split("=")[-1].strip())
+		elif line.startswith("sizeJoy"):
+			config['sizeJoy']=int(line.split("=")[-1].strip())
+		elif line.startswith("sizeKbd"):
+			config['sizeKbd']=int(line.split("=")[-1].strip())
 	return config
 #def parseConfig
 	
@@ -343,8 +347,8 @@ def _parseConfig():
 app=QApplication(["cutreStick"])
 config=_parseConfig()
 cutreStick=cutrestick(config)
-cutreButtons=cutrebuttons()
+cutreButtons=cutrebuttons(config)
 #cutreStick.setKeys(config)
-cutreButtons.setKeys(config)
+#cutreButtons.setKeys(config)
 app.exec_()
 
