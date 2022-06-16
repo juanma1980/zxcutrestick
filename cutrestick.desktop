@@ -1,0 +1,10 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=cutrestick
+GenericName=cutrestick
+Icon=
+Comment=Virtual joystick for retro-machine emulators on touchscreens
+Categories=Qt;KDE;Game;
+Exec=
+StartupNotify=true
