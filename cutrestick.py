@@ -44,7 +44,9 @@ class pressedStick(QThread):
 	def __init__(self,*args):
 		super().__init__()
 		self.keyx=""
+		self.oldkeyx=""
 		self.keyy=""
+		self.oldkeyy=""
 		self.latency=0.1
 	#def __init__
 
@@ -62,15 +64,22 @@ class pressedStick(QThread):
 	#def run
 
 	def setKeys(self,x="",y=""):
-		if x!=self.keyx or y!=self.keyy:
-			if y!=self.keyy and self.keyy!="":
-				cmd=["xdotool","keyup",self.keyy]
-				subprocess.run(cmd)
-				time.sleep(0.2)
-			if x!=self.keyx and self.keyx!="":
-				cmd=["xdotool","keyup",self.keyx]
-				subprocess.run(cmd)
-				time.sleep(self.latency)
+		if self.oldkeyy!="" and self.oldkeyy!=self.keyy:
+			cmd=["xdotool","keyup",self.oldkeyy]
+			subprocess.run(cmd)
+		if self.oldkeyx!="" and self.oldkeyx!=self.keyx:
+			cmd=["xdotool","keyup",self.oldkeyx]
+			subprocess.run(cmd)
+		if y!=self.keyy and self.keyy!="":
+			cmd=["xdotool","keyup",self.keyy]
+			subprocess.run(cmd)
+			time.sleep(self.latency)
+			self.oldkeyy=self.keyy
+		if x!=self.keyx and self.keyx!="":
+			cmd=["xdotool","keyup",self.keyx]
+			subprocess.run(cmd)
+			time.sleep(self.latency)
+			self.oldkeyx=self.keyx
 		self.keyx=x
 		self.keyy=y
 	#def setKeys
